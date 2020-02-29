@@ -10,10 +10,11 @@
 #define RESOURCES_ERROR_FOPEN   4
 #define RESOURCES_ERROR_FCLOSE  5
 
-/**
- * Read the whole file into `fileContent`, a null-terminated string.
- * After use, you have to free it yourself.
- */
-int readFile(const char* pathname, char** fileContent, size_t* fileSize);
+/// Read the whole file into `fileContent`, a null-terminated string.
+/// After use, you have to free it yourself. I suggest using `freeFileContents`.
+int readFileContents(const char* pathname, char** fileContent, size_t* fileSize);
+
+/// Free the memory that was allocated with `readFileContents`.
+void freeFileContents(char** fileContent);
 
 #endif

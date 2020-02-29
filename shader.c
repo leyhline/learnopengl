@@ -42,30 +42,55 @@ GLint checkProgramLinkError(GLuint program) {
 }
 
 GLuint createShader(const char* shaderPath, GLenum shaderType) {
+    if (shaderPath == NULL || !(shaderType != GL_VERTEX_SHADER || shaderType != GL_FRAGMENT_SHADER)) {
+        fprintf(stderr, "Error: Invalid argument when creating shader: %s\n", shaderPath);
+        return 0;
+    }
     char* source;
     size_t sourceSize;
-    int success = readFile(shaderPath, &source, &sourceSize);
+    int success = readFileContents(shaderPath, &source, &sourceSize);
     if (success != RESOURCES_SUCCESS) {
-        return success;
+        fprintf(stderr, "Error: Reading shader file failed: %s\n", shaderPath);
+        return 0;
     }
     const GLchar* const sourceContent = source;
     GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, &sourceContent, NULL);
     glCompileShader(shader);
-    free(source);
-    checkShaderCompileError(shader);
+    freeFileContents(&source);
+    if (!checkShaderCompileError(shader)) {
+        return 0;
+    }
     return shader;
+}
+
+void freeShader(GLuint shader) {
+    glDeleteShader(shader);
 }
 
 GLuint createShaderProgram(const char* const vertexPath, const char* const fragmentPath) {
     GLuint vertexShader = createShader(vertexPath, GL_VERTEX_SHADER);
+    if (vertexShader == 0) {
+        fprintf(stderr, "Error: Creation of vertex shader failed: %s\n", vertexPath);
+        return 0;
+    }
     GLuint fragmentShader = createShader(fragmentPath, GL_FRAGMENT_SHADER);
+    if (fragmentShader == 0) {
+        fprintf(stderr, "Error: Creation of fragment shader failed: %s\n", fragmentPath);
+        return 0;
+    }
     GLuint program = glCreateProgram();
     glAttachShader(program, vertexShader);
     glAttachShader(program, fragmentShader);
     glLinkProgram(program);
-    checkProgramLinkError(program);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    if (!checkProgramLinkError(program)) {
+        return 0;
+    }
+    freeShader(vertexShader);
+    freeShader(fragmentShader);
     return program;
 }
+
+void freeShaderProgram(GLuint program) {
+    glDeleteProgram(program);
+};
