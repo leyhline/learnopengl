@@ -1,1 +1,4 @@
 .vscode/
+
+app
+*.o

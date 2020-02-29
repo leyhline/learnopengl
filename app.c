@@ -1,10 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <math.h>
 
-#include <glad/glad.h>
+#include "resources.h"
+
+#include "glad/glad.h"
 #define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 640
@@ -15,22 +18,6 @@ typedef struct StaticDrawData {
     GLuint ebo;
 } StaticDrawData;
 
-const GLchar* const vertexShaderSource =
-"#version 300 es\n"
-"layout (location = 0) in vec3 aPos;\n"
-"void main() {\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.f);\n"
-"}";
-
-const GLchar* const fragmentShaderSource =
-"#version 300 es\n"
-"precision lowp float;\n"
-"out vec4 FragColor;\n"
-"uniform vec4 ourColor;\n"
-"void main() {\n"
-"   FragColor = ourColor;\n"
-"}";
-
 unsigned int drawModeIndex = 0;
 const GLenum drawModes[] = {
     GL_TRIANGLES,
@@ -40,11 +27,11 @@ const GLenum drawModes[] = {
     GL_POINTS
 };
 
-void error_callback(int error, const char* description) {
+void errorCallback(int error, const char* description) {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_D && action == GLFW_PRESS) {
@@ -72,8 +59,12 @@ GLint checkShaderCompileError(GLuint shader) {
         GLint infoLogLength;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
         GLchar* infoLog = (char*) malloc(infoLogLength * sizeof(char));
+        if (infoLog == NULL) {
+            fprintf(stderr, "Critical: checkShaderCompileError could not allocate memory (%d)\n", errno);
+            exit(EXIT_FAILURE);
+        }
         glGetShaderInfoLog(shader, infoLogLength, NULL, infoLog);
-        fprintf(stderr, "Error: Shader Compilation failed: %s", infoLog);
+        fprintf(stderr, "Error: Shader Compilation failed: %s\n", infoLog);
         free(infoLog);
     }
     return success;
@@ -86,8 +77,12 @@ GLint checkProgramLinkError(GLuint program) {
         GLint infoLogLength;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
         GLchar* infoLog = (char*) malloc(infoLogLength * sizeof(char));
+        if (infoLog == NULL) {
+            fprintf(stderr, "Critical: checkProgramLinkError could not allocate memory (%d)\n", errno);
+            exit(EXIT_FAILURE);
+        }
         glGetProgramInfoLog(program, infoLogLength, NULL, infoLog);
-        fprintf(stderr, "Error: Linking Program failed: %s", infoLog);
+        fprintf(stderr, "Error: Linking Program failed: %s\n", infoLog);
         free(infoLog);
     }
     return success;
@@ -117,7 +112,7 @@ void draw(double delta, StaticDrawData staticData) {
 
 int main(void) {
     printf("GLFW version: %s\n",  glfwGetVersionString());
-    glfwSetErrorCallback(error_callback);
+    glfwSetErrorCallback(errorCallback);
     if (!glfwInit()) {
         return EXIT_FAILURE;
     }
@@ -133,17 +128,34 @@ int main(void) {
         glfwTerminate();
         return EXIT_FAILURE;
     }
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
     showGlInfo();
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    char* vertexShaderSource;
+    size_t vertexShaderSourceSize;
+    int readFileSuccess;
+    readFileSuccess = readFile("resources/vertex.glsl", &vertexShaderSource, &vertexShaderSourceSize);
+    if (readFileSuccess != RESOURCES_SUCCESS) {
+        return readFileSuccess;
+    }
+    const GLchar* const vertexShaderSourceConst = vertexShaderSource;
+    glShaderSource(vertexShader, 1, &vertexShaderSourceConst, NULL);
     glCompileShader(vertexShader);
+    free(vertexShaderSource);
     checkShaderCompileError(vertexShader);
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    char* fragmentShaderSource;
+    size_t fragmentShaderSourceSize;
+    readFileSuccess = readFile("resources/fragment.glsl", &fragmentShaderSource, &fragmentShaderSourceSize);
+    if (readFileSuccess != RESOURCES_SUCCESS) {
+        return readFileSuccess;
+    }
+    const GLchar* const fragmentShaderSourceConst = fragmentShaderSource;
+    glShaderSource(fragmentShader, 1, &fragmentShaderSourceConst, NULL);
     glCompileShader(fragmentShader);
+    free(fragmentShaderSource);
     checkShaderCompileError(fragmentShader);
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
@@ -154,14 +166,12 @@ int main(void) {
     glDeleteShader(fragmentShader);
 
     GLfloat vertices[] = {
-        0.5f,  0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        -0.5f,  0.5f, 0.0f
+         1.f, -0.8f, 0.f, 1.f, 0.f, 0.f,
+        -1.f, -0.8f, 0.f, 0.f, 1.f, 0.f,
+         0.f,  0.8f, 0.f, 0.f, 0.f, 1.f
     };
     GLuint indices[] = {
-        0, 1, 3,
-        1, 2, 3
+        0, 1, 2
     };
     GLuint virtArrObj, virtBuffObj, elemBuffObj;
     glGenVertexArrays(1, &virtArrObj);
@@ -170,8 +180,10 @@ int main(void) {
     glBindVertexArray(virtArrObj);
     glBindBuffer(GL_ARRAY_BUFFER, virtBuffObj);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elemBuffObj);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
