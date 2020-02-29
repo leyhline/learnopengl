@@ -3,11 +3,11 @@
 #include <errno.h>
 #include <math.h>
 
-#include "resources.h"
-
 #include "glad/glad.h"
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
+
+#include "shader.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 640
@@ -50,42 +50,6 @@ void setGlfwWindowHints(void) {
     glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-}
-
-GLint checkShaderCompileError(GLuint shader) {
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        GLint infoLogLength;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
-        GLchar* infoLog = (char*) malloc(infoLogLength * sizeof(char));
-        if (infoLog == NULL) {
-            fprintf(stderr, "Critical: checkShaderCompileError could not allocate memory (%d)\n", errno);
-            exit(EXIT_FAILURE);
-        }
-        glGetShaderInfoLog(shader, infoLogLength, NULL, infoLog);
-        fprintf(stderr, "Error: Shader Compilation failed: %s\n", infoLog);
-        free(infoLog);
-    }
-    return success;
-}
-
-GLint checkProgramLinkError(GLuint program) {
-    GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        GLint infoLogLength;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-        GLchar* infoLog = (char*) malloc(infoLogLength * sizeof(char));
-        if (infoLog == NULL) {
-            fprintf(stderr, "Critical: checkProgramLinkError could not allocate memory (%d)\n", errno);
-            exit(EXIT_FAILURE);
-        }
-        glGetProgramInfoLog(program, infoLogLength, NULL, infoLog);
-        fprintf(stderr, "Error: Linking Program failed: %s\n", infoLog);
-        free(infoLog);
-    }
-    return success;
 }
 
 void showGlInfo(void) {
@@ -131,40 +95,7 @@ int main(void) {
     glfwSetKeyCallback(window, keyCallback);
     showGlInfo();
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* vertexShaderSource;
-    size_t vertexShaderSourceSize;
-    int readFileSuccess;
-    readFileSuccess = readFile("resources/vertex.glsl", &vertexShaderSource, &vertexShaderSourceSize);
-    if (readFileSuccess != RESOURCES_SUCCESS) {
-        return readFileSuccess;
-    }
-    const GLchar* const vertexShaderSourceConst = vertexShaderSource;
-    glShaderSource(vertexShader, 1, &vertexShaderSourceConst, NULL);
-    glCompileShader(vertexShader);
-    free(vertexShaderSource);
-    checkShaderCompileError(vertexShader);
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* fragmentShaderSource;
-    size_t fragmentShaderSourceSize;
-    readFileSuccess = readFile("resources/fragment.glsl", &fragmentShaderSource, &fragmentShaderSourceSize);
-    if (readFileSuccess != RESOURCES_SUCCESS) {
-        return readFileSuccess;
-    }
-    const GLchar* const fragmentShaderSourceConst = fragmentShaderSource;
-    glShaderSource(fragmentShader, 1, &fragmentShaderSourceConst, NULL);
-    glCompileShader(fragmentShader);
-    free(fragmentShaderSource);
-    checkShaderCompileError(fragmentShader);
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    checkProgramLinkError(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
+    GLuint shaderProgram = createShaderProgram("resources/vertex.glsl", "resources/fragment.glsl");
     GLfloat vertices[] = {
          1.f, -0.8f, 0.f, 1.f, 0.f, 0.f,
         -1.f, -0.8f, 0.f, 0.f, 1.f, 0.f,
