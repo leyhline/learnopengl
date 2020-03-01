@@ -66,12 +66,9 @@ void draw(double delta, StaticDrawData staticData) {
     glClearColor(0.18f, 0.20f, 0.21f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(staticData.program);
-    float greenValue = (sin(glfwGetTime()) / 2.f) + 0.5f;
-    GLint ourColorLoc = glGetUniformLocation(staticData.program, "ourColor");
-    glUniform4f(ourColorLoc, 0.f, greenValue, 0.f, 1.f);
     glBindVertexArray(staticData.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, staticData.ebo);
-    glDrawElements(drawModes[drawModeIndex], 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(drawModes[drawModeIndex], 3, GL_UNSIGNED_INT, 0);
 }
 
 int main(void) {
@@ -95,10 +92,10 @@ int main(void) {
     glfwSetKeyCallback(window, keyCallback);
     showGlInfo();
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    GLuint shaderProgram = createShaderProgram("resources/vertex.glsl", "resources/fragment.glsl");
+    GLuint shaderProgram = createShaderProgram("resources/colors.vert", "resources/colors.frag");
     GLfloat vertices[] = {
          1.f, -0.8f, 0.f, 1.f, 0.f, 0.f,
-        -1.f, -0.8f, 0.f, 0.f, 1.f, 0.f,
+        -1.f, -0.8f, 0.f, 1.f, 1.f, 0.f,
          0.f,  0.8f, 0.f, 0.f, 0.f, 1.f
     };
     GLuint indices[] = {
