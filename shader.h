@@ -15,4 +15,8 @@ GLuint createShaderProgram(const char* vertexPath, const char* fragmentPath);
 /// Delete `program`.
 void freeShaderProgram(GLuint program);
 
+void setShaderInt(GLuint program, const GLchar* const name, GLint value);
+
+void setShaderFloat(GLuint program, const GLchar* const name, GLfloat value);
+
 #endif

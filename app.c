@@ -101,6 +101,11 @@ int main(void) {
     GLuint indices[] = {
         0, 1, 2
     };
+    float texCoords[] = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        0.5f, 1.0f
+    };
     GLuint virtArrObj, virtBuffObj, elemBuffObj;
     glGenVertexArrays(1, &virtArrObj);
     glGenBuffers(1, &virtBuffObj);
@@ -116,6 +121,10 @@ int main(void) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     StaticDrawData staticDrawData = {
         .program = shaderProgram,
         .vao = virtArrObj,

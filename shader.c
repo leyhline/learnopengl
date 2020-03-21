@@ -94,3 +94,21 @@ GLuint createShaderProgram(const char* const vertexPath, const char* const fragm
 void freeShaderProgram(GLuint program) {
     glDeleteProgram(program);
 };
+
+void setShaderInt(GLuint program, const GLchar* const name, GLint value) {
+    GLint location = glGetUniformLocation(program, name);
+    if (location == -1) {
+        fprintf(stderr, "Warning: Does not correspond to active uniform variable: %s\n", name);
+        return;
+    }
+    glUniform1i(location, value);
+}
+
+void setShaderFloat(GLuint program, const GLchar* const name, GLfloat value) {
+    GLint location = glGetUniformLocation(program, name);
+    if (location == -1) {
+        fprintf(stderr, "Warning: Does not correspond to active uniform variable: %s\n", name);
+        return;
+    }
+    glUniform1f(location, value);
+}

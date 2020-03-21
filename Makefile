@@ -9,7 +9,6 @@ LDLIBS = -lglfw3 -lm -lrt -ldl -lpthread -lwayland-client
 .SUFFIXES: .c .o
 
 app: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS) $(LDLIBS)
 
 .PHONY: clean
 clean:
